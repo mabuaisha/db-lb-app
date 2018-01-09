@@ -52,6 +52,21 @@ node_types:
             api: CoreV1Api
             method: patch_namespaced_persistent_volume_claim
 
+plugins:
+
+  scale_db:
+    executor: central_deployment_agent
+    source: cloudify-scale-db
+
+workflows:
+
+  scale_database:
+    mapping: scale_db.cloudify_scale_db.tasks.execute_scale
+    parameters:
+      database_deployment_id:
+        type: string
+        default: db
+
 dsl_definitions:
 
   kube_config: &kube_config
