@@ -78,7 +78,7 @@ dsl_definitions:
 
 node_templates:
 
-  wordpress_svc:
+  app_svc:
     type: cloudify.kubernetes.resources.FileDefinedResource
     properties:
       file:
@@ -87,9 +87,9 @@ node_templates:
       - type: cloudify.kubernetes.relationships.managed_by_master
         target: kubernetes_master
       - type: cloudify.relationships.depends_on
-        target: wordpress_deploy
+        target: app_deploy
 
-  wordpress_deploy:
+  app_deploy:
     type: cloudify.kubernetes.resources.FileDefinedResource
     properties:
       file:
@@ -102,7 +102,7 @@ node_templates:
       - type: cloudify.kubernetes.relationships.managed_by_master
         target: kubernetes_master
       - type: cloudify.relationships.depends_on
-        target: wp_pv_claim
+        target: pv_claim
       - type: cloudify.relationships.depends_on
         target: lb
     interfaces:
@@ -117,14 +117,14 @@ node_templates:
                 db_user_password: { get_input: db_user_password }
                 db_user: demo
 
-  wp_pv_claim:
+  pv_claim:
     type: cloudify.kubernetes.resources.PersistentVolumeClaim
     properties:
       definition:
         apiVersion: v1
         kind: PersistentVolumeClaim
         metadata:
-          name: wp-pv-claim
+          name: pv-claim
           labels:
             app: wordpress
         spec:
@@ -137,9 +137,9 @@ node_templates:
       - type: cloudify.kubernetes.relationships.managed_by_master
         target: kubernetes_master
       - type: cloudify.relationships.depends_on
-        target: local_pv_1
+        target: pv_1
 
-  local_pv_1:
+  pv_1:
     type: cloudify.kubernetes.resources.FileDefinedResource
     properties:
       file:
