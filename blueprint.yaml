@@ -4,6 +4,7 @@ imports:
   - http://www.getcloudify.org/spec/cloudify/4.2/types.yaml
   - http://www.getcloudify.org/spec/utilities-plugin/1.4.3/plugin.yaml
   - http://www.getcloudify.org/spec/kubernetes-plugin/2.0.0/plugin.yaml
+  - http://www.getcloudify.org/spec/dblb/0.1/plugin.yaml
 
 inputs:
 
@@ -77,7 +78,7 @@ dsl_definitions:
 
 node_templates:
 
-  wordpress_svc:
+  app_svc:
     type: cloudify.kubernetes.resources.FileDefinedResource
     properties:
       file:
@@ -86,9 +87,9 @@ node_templates:
       - type: cloudify.kubernetes.relationships.managed_by_master
         target: kubernetes_master
       - type: cloudify.relationships.depends_on
-        target: wordpress_deploy
+        target: app_deploy
 
-  wordpress_deploy:
+  app_deploy:
     type: cloudify.kubernetes.resources.FileDefinedResource
     properties:
       file:
@@ -101,7 +102,7 @@ node_templates:
       - type: cloudify.kubernetes.relationships.managed_by_master
         target: kubernetes_master
       - type: cloudify.relationships.depends_on
-        target: wp_pv_claim
+        target: pv_claim
       - type: cloudify.relationships.depends_on
         target: lb
     interfaces:
@@ -116,14 +117,14 @@ node_templates:
                 db_user_password: { get_input: db_user_password }
                 db_user: demo
 
-  wp_pv_claim:
+  pv_claim:
     type: cloudify.kubernetes.resources.PersistentVolumeClaim
     properties:
       definition:
         apiVersion: v1
         kind: PersistentVolumeClaim
         metadata:
-          name: wp-pv-claim
+          name: pv-claim
           labels:
             app: wordpress
         spec:
@@ -136,9 +137,9 @@ node_templates:
       - type: cloudify.kubernetes.relationships.managed_by_master
         target: kubernetes_master
       - type: cloudify.relationships.depends_on
-        target: local_pv_1
+        target: pv_1
 
-  local_pv_1:
+  pv_1:
     type: cloudify.kubernetes.resources.FileDefinedResource
     properties:
       file:
@@ -180,7 +181,7 @@ node_templates:
               deployment:
                 id: { get_property: [ SELF, resource_config, deployment, id ] }
                 inputs:
-                  application_ip: { get_attribute: [ db, deployment, outputs, ip ] }
+                  application_ip: { get_attribute: [ db, deployment, outputs, ips, 0 ] }
                 outputs:
                   ip: { get_property: [ SELF, resource_config, deployment, outputs, ip ] }
 
@@ -190,11 +191,11 @@ node_templates:
       resource_config:
         blueprint:
           id: db
-          blueprint_archive: https://github.com/cloudify-examples/mariadb-blueprint/archive/master.zip
+          blueprint_archive: https://github.com/cloudify-examples/mariadb-blueprint/archive/e6a8c3170701ce658bbb7beafd68158e3501f8ce.zip
           main_file_name: { get_input: environment_blueprint_filename }
         deployment:
           id: db
           inputs:
             new_password: { get_input: db_user_password }
           outputs:
-            master: ip
+            cluster_addresses: ips
