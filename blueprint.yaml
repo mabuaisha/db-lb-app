@@ -11,6 +11,12 @@ inputs:
   environment_blueprint_filename:
     default: openstack-blueprint.yaml
 
+  lb_blueprint_archive:
+    default: https://github.com/cloudify-examples/haproxy-blueprint/archive/1b56f1ebb524576e755535c3aa687e20a39b94f9.zip
+
+  db_blueprint_archive:
+    default: https://github.com/cloudify-examples/mariadb-blueprint/archive/246c611adc79cae4186280dae69cd98fd4c1dd93.zip
+
   kubernetes_master_ip:
     type: string
     default: { get_secret: kubernetes_master_ip }
@@ -160,7 +166,7 @@ node_templates:
       resource_config:
         blueprint:
           id: lb
-          blueprint_archive: https://github.com/cloudify-examples/haproxy-blueprint/archive/612c98216f9bb057320698c496e0c8c975a26df5.zip
+          blueprint_archive: { get_input: lb_blueprint_archive }
           main_file_name: { get_input: environment_blueprint_filename }
         deployment:
           id: lb
@@ -191,7 +197,7 @@ node_templates:
       resource_config:
         blueprint:
           id: db
-          blueprint_archive: https://github.com/cloudify-examples/mariadb-blueprint/archive/e6a8c3170701ce658bbb7beafd68158e3501f8ce.zip
+          blueprint_archive: { get_input: db_blueprint_archive }
           main_file_name: { get_input: environment_blueprint_filename }
         deployment:
           id: db
