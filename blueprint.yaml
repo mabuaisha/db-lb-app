@@ -15,7 +15,7 @@ inputs:
     default: https://github.com/cloudify-examples/haproxy-blueprint/archive/1b56f1ebb524576e755535c3aa687e20a39b94f9.zip
 
   db_blueprint_archive:
-    default: https://github.com/cloudify-examples/mariadb-blueprint/archive/246c611adc79cae4186280dae69cd98fd4c1dd93.zip
+    default: https://github.com/cloudify-examples/mariadb-blueprint/archive/f2d91c267743ab14c86703efafda02cfd7cac466.zip
 
   kubernetes_master_ip:
     type: string
