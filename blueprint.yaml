@@ -4,6 +4,7 @@ imports:
   - http://www.getcloudify.org/spec/cloudify/4.2/types.yaml
   - http://www.getcloudify.org/spec/utilities-plugin/1.4.3/plugin.yaml
   - http://www.getcloudify.org/spec/kubernetes-plugin/2.0.0/plugin.yaml
+  - http://www.getcloudify.org/spec/dblb/0.1/plugin.yaml
 
 inputs:
 
@@ -180,7 +181,7 @@ node_templates:
               deployment:
                 id: { get_property: [ SELF, resource_config, deployment, id ] }
                 inputs:
-                  application_ip: { get_attribute: [ db, deployment, outputs, ip ] }
+                  application_ip: { get_attribute: [ db, deployment, outputs, ips, 0 ] }
                 outputs:
                   ip: { get_property: [ SELF, resource_config, deployment, outputs, ip ] }
 
@@ -197,4 +198,4 @@ node_templates:
           inputs:
             new_password: { get_input: db_user_password }
           outputs:
-            master: ip
+            cluster_addresses: ips
