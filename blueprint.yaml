@@ -4,7 +4,7 @@ imports:
   - http://www.getcloudify.org/spec/cloudify/4.2/types.yaml
   - http://www.getcloudify.org/spec/utilities-plugin/1.4.4/plugin.yaml
   - http://www.getcloudify.org/spec/kubernetes-plugin/2.0.0/plugin.yaml
-  - http://www.getcloudify.org/spec/dblb/0.1/plugin.yaml
+  - http://www.getcloudify.org/spec/dblb/0.2/plugin.yaml
 
 inputs:
 
