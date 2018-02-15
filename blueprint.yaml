@@ -46,6 +46,12 @@ inputs:
   proxy_manager_network:
     default: aws
 
+  db_blueprint:
+    default: db
+
+  lb_blueprint:
+    default: lb
+
   db_deployment:
     default: db
 
@@ -180,7 +186,7 @@ node_templates:
     properties:
       resource_config:
         blueprint:
-          id: { get_input: lb_deployment }
+          id: { get_input: lb_blueprint }
           blueprint_archive: https://github.com/cloudify-examples/haproxy-blueprint/archive/master.zip
           main_file_name: { get_input: environment_blueprint_filename }
           external_resource: { get_input: use_external_database }
@@ -222,7 +228,7 @@ node_templates:
     properties:
       resource_config:
         blueprint:
-          id: { get_input: db_deployment }
+          id: { get_input: db_blueprint }
           blueprint_archive: https://github.com/cloudify-examples/mariadb-blueprint/archive/master.zip
           main_file_name: { get_input: environment_blueprint_filename }
           external_resource: { get_input: use_external_database }
