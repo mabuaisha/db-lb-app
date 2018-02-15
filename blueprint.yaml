@@ -53,10 +53,10 @@ inputs:
     default: lb
 
   db_deployment:
-    default: db
+    default: { get_input: db_blueprint }
 
   lb_deployment:
-    default: lb
+    default:  { get_input: lb_blueprint }
 
 node_types:
 
