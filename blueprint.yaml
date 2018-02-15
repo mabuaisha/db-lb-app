@@ -2,14 +2,14 @@ tosca_definitions_version: cloudify_dsl_1_3
 
 imports:
   - http://www.getcloudify.org/spec/cloudify/4.2/types.yaml
-  - http://www.getcloudify.org/spec/utilities-plugin/1.4.3/plugin.yaml
+  - http://www.getcloudify.org/spec/utilities-plugin/1.4.5/plugin.yaml
   - http://www.getcloudify.org/spec/kubernetes-plugin/2.0.0/plugin.yaml
-  - http://www.getcloudify.org/spec/dblb/0.1/plugin.yaml
+  - http://www.getcloudify.org/spec/dblb/0.2/plugin.yaml
 
 inputs:
 
   environment_blueprint_filename:
-    default: openstack-blueprint.yaml
+    default: aws.yaml
 
   lb_blueprint_archive:
     default: https://github.com/cloudify-examples/haproxy-blueprint/archive/1b56f1ebb524576e755535c3aa687e20a39b94f9.zip
@@ -34,8 +34,23 @@ inputs:
   kubernetes-admin_client_key_data:
     default: { get_secret: kubernetes-admin_client_key_data }
 
-  db_user_password:
-    default: X0kdmdwethrngosdf88
+  new_database_user:
+    default: demo
+
+  new_database_password:
+    default: new_password
+
+  use_external_database:
+    default: true
+
+  proxy_manager_network:
+    default: aws
+
+  db_deployment:
+    default: db
+
+  lb_deployment:
+    default: lb
 
 node_types:
 
@@ -102,8 +117,8 @@ node_templates:
         resource_path: resources/deployment.yaml
         template_variables:
           db_host: { get_attribute: [ lb, deployment, outputs, ip ] }
-          db_user_password: { get_input: db_user_password }
-          db_user: demo
+          db_user_password: { get_input: new_database_password }
+          db_user: { get_input: new_database_user }
     relationships:
       - type: cloudify.kubernetes.relationships.managed_by_master
         target: kubernetes_master
@@ -120,8 +135,8 @@ node_templates:
               resource_path: resources/deployment.yaml
               template_variables:
                 db_host: { get_attribute: [ lb, deployment, outputs, ip ] }
-                db_user_password: { get_input: db_user_password }
-                db_user: demo
+                db_user_password: { get_input: new_database_password }
+                db_user: { get_input: new_database_user }
 
   pv_claim:
     type: cloudify.kubernetes.resources.PersistentVolumeClaim
@@ -165,18 +180,22 @@ node_templates:
     properties:
       resource_config:
         blueprint:
-          id: lb
-          blueprint_archive: { get_input: lb_blueprint_archive }
+          id: { get_input: lb_deployment }
+          blueprint_archive: https://github.com/cloudify-examples/haproxy-blueprint/archive/master.zip
           main_file_name: { get_input: environment_blueprint_filename }
+          external_resource: { get_input: use_external_database }
         deployment:
-          id: lb
+          id: { get_input: lb_deployment }
           inputs:
+            manager_network: { get_input: proxy_manager_network }
             application_ip: ''
           outputs:
             ip: ip
+          external_resource: { get_input: use_external_database }
+        reexecute: false
     relationships:
-      - type: cloudify.relationships.depends_on
-        target: db
+    - type: cloudify.relationships.depends_on
+      target: db
     interfaces:
       cloudify.interfaces.lifecycle:
         configure:
@@ -187,21 +206,41 @@ node_templates:
               deployment:
                 id: { get_property: [ SELF, resource_config, deployment, id ] }
                 inputs:
+                  manager_network: { get_input: proxy_manager_network }
                   application_ip: { get_attribute: [ db, deployment, outputs, ips, 0 ] }
                 outputs:
                   ip: { get_property: [ SELF, resource_config, deployment, outputs, ip ] }
+        start:
+          implementation: cfy_util.cloudify_deployment_proxy.tasks.execute_start
+          inputs:
+            workflow_id: install
+            timeout: 1100
+            interval: 15
 
   db:
     type: cloudify.nodes.DeploymentProxy
     properties:
       resource_config:
         blueprint:
-          id: db
-          blueprint_archive: { get_input: db_blueprint_archive }
+          id: { get_input: db_deployment }
+          blueprint_archive: https://github.com/cloudify-examples/mariadb-blueprint/archive/master.zip
           main_file_name: { get_input: environment_blueprint_filename }
+          external_resource: { get_input: use_external_database }
         deployment:
-          id: db
+          id: { get_input: db_deployment }
           inputs:
-            new_password: { get_input: db_user_password }
+            new_database_user: { get_input: new_database_user}
+            new_database_password: { get_input: new_database_password }
+            manager_network: { get_input: proxy_manager_network }
           outputs:
             cluster_addresses: ips
+          external_resource: { get_input: use_external_database }
+        reexecute: false
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        start:
+          implementation: cfy_util.cloudify_deployment_proxy.tasks.execute_start
+          inputs:
+            workflow_id: install
+            timeout: 1100
+            interval: 15
