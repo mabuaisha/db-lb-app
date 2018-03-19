@@ -9,7 +9,7 @@ imports:
 inputs:
 
   environment_blueprint_filename:
-    default: aws.yaml
+    default: openstack.yaml
 
   lb_blueprint_archive:
     default: https://github.com/cloudify-examples/haproxy-blueprint/archive/1b56f1ebb524576e755535c3aa687e20a39b94f9.zip
@@ -41,10 +41,16 @@ inputs:
     default: new_password
 
   use_external_database:
-    default: true
+    default: false
 
   proxy_manager_network:
-    default: aws
+    default: external
+
+  db_image:
+    default: 05bb3a46-ca32-4032-bedd-8d7ebd5c8100
+
+  lb_image:
+    default: aee5438f-1c7c-497f-a11e-53360241cf0f
 
   db_blueprint:
     default: db
@@ -187,18 +193,18 @@ node_templates:
       resource_config:
         blueprint:
           id: { get_input: lb_blueprint }
-          blueprint_archive: https://github.com/cloudify-examples/haproxy-blueprint/archive/master.zip
+          blueprint_archive: https://github.com/mabuaisha/haproxy-blueprint/archive/master.zip
           main_file_name: { get_input: environment_blueprint_filename }
           external_resource: { get_input: use_external_database }
         deployment:
           id: { get_input: lb_deployment }
           inputs:
             manager_network: { get_input: proxy_manager_network }
-            application_ip: ''
+            image: { get_input: lb_image }
+            application_ip: { get_attribute: [ db, deployment, outputs, ips ] }
           outputs:
             ip: ip
           external_resource: { get_input: use_external_database }
-        reexecute: false
     relationships:
     - type: cloudify.relationships.depends_on
       target: db
@@ -229,7 +235,7 @@ node_templates:
       resource_config:
         blueprint:
           id: { get_input: db_blueprint }
-          blueprint_archive: https://github.com/cloudify-examples/mariadb-blueprint/archive/master.zip
+          blueprint_archive: https://github.com/mabuaisha/mariadb-blueprint/archive/master.zip
           main_file_name: { get_input: environment_blueprint_filename }
           external_resource: { get_input: use_external_database }
         deployment:
@@ -238,10 +244,10 @@ node_templates:
             new_database_user: { get_input: new_database_user}
             new_database_password: { get_input: new_database_password }
             manager_network: { get_input: proxy_manager_network }
+            image: { get_input: db_image }
           outputs:
             cluster_addresses: ips
           external_resource: { get_input: use_external_database }
-        reexecute: false
     interfaces:
       cloudify.interfaces.lifecycle:
         start:
